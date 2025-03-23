@@ -55,39 +55,13 @@ export const SaveData = async (req, data) => {
         };
     }
 
+    SaveIpLocation(req, res)
+
     console.log("Saved");
 }
 
-export const SavePreciseLocation = async (req, res) => {
+export const SaveIpLocation = async (ip, data_id) => {
     try {
-        const { latitude, longitude, accuracy } = req.body;
-        const ip = req.headers['x-forwarded-for']?.split(',')[0] || 
-                   req.socket.remoteAddress || 
-                   req.connection?.remoteAddress;
-        
-        const [result] = await pool.execute(
-            `INSERT INTO precise_locations 
-            (ip, latitude, longitude, accuracy) 
-            VALUES (?, ?, ?, ?, ?)`,
-            [ip, latitude, longitude, accuracy]
-        );
-        
-        return res.status(201).json({ 
-            message: 'Ubicación guardada correctamente',
-            id: result.insertId
-        });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: 'Error interno del servidor' });
-    }
-};
-
-export const SaveIpLocation = async (req, res) => {
-    try {
-        const ip = req.headers['x-forwarded-for']?.split(',')[0] ||
-                req.socket.remoteAddress ||
-                req.connection?.remoteAddress;
-                
         const testIp = ip === '127.0.0.1' || ip === '::1' ||
                    ip.startsWith('192.168.') || ip.startsWith('10.') ||
                    ip.startsWith('172.') ? '8.8.8.8' : ip;
@@ -110,26 +84,17 @@ export const SaveIpLocation = async (req, res) => {
         } else {
             await pool.execute(
                 `INSERT INTO precise_locations
-                (ip, latitude, longitude, accuracy, source)
-                VALUES (?, ?, ?, ?, ?)`,
-                [ip, locationData.lat, locationData.lon, 5000, 'ip_fallback']
+                (id, ip, latitude, longitude, accuracy, source)
+                VALUES (?, ?, ?, ?, ?, ?)`,
+                [data_id, ip, locationData.lat, locationData.lon, 5000, 'ip_fallback']
             );
         }
-        
-        return res.json({
-            source: 'ip_fallback',
-            latitude: locationData.lat,
-            longitude: locationData.lon,
-            city: locationData.city,
-            country: locationData.country
-        });
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ error: 'Error interno del servidor' });
     }
 };
 
-export const GetIpDataByIp = async (req, res) => {
+export const GetIpData = async (req, res) => {
     try {
         const { ip } = req.params;
         
