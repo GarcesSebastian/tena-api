@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import http from 'http';
 import userRoutes from './routes/forms.routes.js';
+import formRoutes from './routes/services.routes.js';
 
 config();
 const app = express();
@@ -37,6 +38,7 @@ app.use(limiter);
 const PORT = process.env.PORT || 3000;
 
 app.use('/forms', userRoutes);
+app.use('/services', formRoutes);
 
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
