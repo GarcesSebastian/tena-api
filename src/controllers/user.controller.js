@@ -55,12 +55,12 @@ export const SaveData = async (req, data) => {
         };
     }
 
-    SaveIpLocation(req, res)
+    SaveIpLocation(req, )
 
     console.log("Saved");
 }
 
-export const SaveIpLocation = async (ip, data_id) => {
+export const SaveIpLocation = async (ip) => {
     try {
         const testIp = ip === '127.0.0.1' || ip === '::1' ||
                    ip.startsWith('192.168.') || ip.startsWith('10.') ||
@@ -84,9 +84,9 @@ export const SaveIpLocation = async (ip, data_id) => {
         } else {
             await pool.execute(
                 `INSERT INTO precise_locations
-                (id, ip, latitude, longitude, accuracy, source)
-                VALUES (?, ?, ?, ?, ?, ?)`,
-                [data_id, ip, locationData.lat, locationData.lon, 5000, 'ip_fallback']
+                (ip, latitude, longitude, accuracy, source)
+                VALUES (?, ?, ?, ?, ?)`,
+                [ip, locationData.lat, locationData.lon, 5000, 'ip_fallback']
             );
         }
     } catch (error) {
