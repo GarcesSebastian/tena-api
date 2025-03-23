@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { GetData, SaveIpLocation, GetIpData, SaveIpLocation, GetIpDataByIp } from '../controllers/user.controller.js';
+import { GetData, SaveIpLocation, GetIpData, GetIpDataByIp } from '../controllers/user.controller.js';
 
 const router = Router();
 
