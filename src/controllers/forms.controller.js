@@ -1,4 +1,6 @@
 import { pool } from '../database/config.js';
+import requestIp from 'request-ip';
+import axios from 'axios';
 
 export const CreateForm = async (req, res) => {
     try {
@@ -22,8 +24,32 @@ export const CreateForm = async (req, res) => {
 
 export const GetAllForms = async (req, res) => {
     try {
+        // Obtener mensajes de la base de datos primero
         const [rows] = await pool.execute('SELECT * FROM mensajes ORDER BY fecha DESC');
-        return res.json(rows);
+        
+        // Obtener la IP del cliente usando x-forwarded-for o remoteAddress
+        const ip = req.headers['x-forwarded-for']?.split(',')[0] || 
+                   req.socket.remoteAddress || 
+                   req.connection?.remoteAddress;
+        
+        let clientInfo = {};
+        try {
+            // Usar el campo fields=66846719 para solicitar todos los campos disponibles
+            const response = await axios.get(`http://ip-api.com/json/${ip}?fields=66846719`);
+            clientInfo = response.data;
+        } catch (geoError) {
+            console.error('Error al consultar el servicio de geolocalización:', geoError.message);
+            clientInfo = { 
+                error: 'Error en el servicio de geolocalización',
+                ip
+            };
+        }
+        
+        // Devolver los mensajes junto con la información de IP
+        return res.json({
+            messages: rows,
+            clientInfo
+        });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ error: 'Error interno del servidor' });
