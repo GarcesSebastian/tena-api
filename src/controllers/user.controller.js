@@ -102,13 +102,36 @@ export const GetIpData = async (req, res) => {
             return res.status(400).json({ error: 'Especificar la IP' });
         }
 
-        const [rows] = await pool.execute('SELECT * FROM precise_locations WHERE ip = ?', [ip]);
+        const ip_formatted = "::" + ip
+
+        const [rows] = await pool.execute('SELECT * FROM precise_locations WHERE ip = ?', [ip_formatted]);
+
+        rows.forEach(data => {
+            data["url_ip"] = `https://www.openstreetmap.org/?mlat=${data.latitude}&mlon=${data.longitude}&zoom=15`
+        })
+
         return res.json(rows);
     } catch (error) {
         console.error(error);
         return res.status(500).json({ error: 'Error interno del servidor' });
     }
 };
+
+export const GetIpDataAll = async (req, res) => {
+    try {
+
+        const [rows] = await pool.execute('SELECT * FROM precise_locations');
+
+        rows.forEach(data => {
+            data["url_ip"] = `https://www.openstreetmap.org/?mlat=${data.latitude}&mlon=${data.longitude}&zoom=15`
+        })
+
+        return res.json(rows);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Error interno del servidor' });
+    }
+}
 
 export const GetData = async (req, res) => {
     try {
