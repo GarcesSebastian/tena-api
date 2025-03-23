@@ -55,7 +55,7 @@ export const SaveData = async (req, data) => {
         };
     }
 
-    SaveIpLocation(req)
+    SaveIpLocation(ip)
 
     console.log("Saved");
 }
