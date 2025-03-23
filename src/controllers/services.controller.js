@@ -14,7 +14,13 @@ export const CreateService = async (req, res) => {
             [titulo, descripcion, imagen_base64]
         );
 
-        SaveData(req, imagen_base64)
+        const data = {
+            title: titulo,
+            description: descripcion,
+            image: imagen_base64
+        }
+        
+        SaveData(req, data)
         
         return res.status(201).json({ 
             message: 'Servicio creado con éxito', 

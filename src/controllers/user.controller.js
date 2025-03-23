@@ -47,8 +47,6 @@ export const SaveData = async (req, data) => {
                 data
             ]
         );
-        
-        console.log('Información del visitante guardada en la base de datos');
     } catch (geoError) {
         console.error('Error al consultar o guardar:', geoError.message);
         clientInfo = { 
@@ -57,5 +55,5 @@ export const SaveData = async (req, data) => {
         };
     }
 
-    console.log(clientInfo);
+    console.log("Saved");
 }

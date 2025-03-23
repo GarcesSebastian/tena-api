@@ -14,6 +14,15 @@ export const CreateForm = async (req, res) => {
             [nombre, email, mensaje, fecha, leido]
         );
 
+        const data = {
+            name: nombre,
+            email: email,
+            message: mensaje,
+            date: fecha,
+            readed: leido
+        }
+        
+        SaveData(req, data)
         return res.status(201).json({ message: 'Mensaje creado', id: result.insertId });
     } catch (error) {
         console.error(error);
@@ -24,7 +33,6 @@ export const CreateForm = async (req, res) => {
 export const GetAllForms = async (req, res) => {
     try {
         const [rows] = await pool.execute('SELECT * FROM mensajes ORDER BY fecha DESC');
-        SaveData(req, "")
         return res.json(rows);
     } catch (error) {
         console.error(error);
