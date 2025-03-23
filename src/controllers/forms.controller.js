@@ -1,5 +1,4 @@
 import { pool } from '../database/config.js';
-import requestIp from 'request-ip';
 import axios from 'axios';
 
 export const CreateForm = async (req, res) => {
@@ -24,50 +23,27 @@ export const CreateForm = async (req, res) => {
 
 export const GetAllForms = async (req, res) => {
     try {
-        let clientIp = requestIp.getClientIp(req);
-        
-        if (clientIp === '127.0.0.1' || clientIp.startsWith('192.168.') || clientIp.startsWith('10.') || clientIp.startsWith('172.')) {
-            clientIp = '8.8.8.8';
-        }
-        
-        let ipInfo = {};
-        try {
-            const response = await axios.get(`http://ip-api.com/json/${clientIp}?fields=status,message,country,regionName,city,district,zip,timezone,isp,org,as,lat,lon,mobile,proxy,hosting`);
-            ipInfo = response.data;
-            
-            if (ipInfo.status !== 'success') {
-                console.error('Error al obtener información de IP:', ipInfo.message);
-                ipInfo = { error: 'No se pudo obtener información de geolocalización' };
-            }
-        } catch (geoError) {
-            console.error('Error al consultar el servicio de geolocalización:', geoError.message);
-            ipInfo = { error: 'Error en el servicio de geolocalización' };
-        }
-
         const [rows] = await pool.execute('SELECT * FROM mensajes ORDER BY fecha DESC');
         
-        return res.json({
-            messages: rows,
-            clientInfo: {
-                ip: clientIp,
-                country: ipInfo.country || 'No disponible',
-                region: ipInfo.regionName || 'No disponible',
-                city: ipInfo.city || 'No disponible',
-                district: ipInfo.district || 'No disponible',
-                zipCode: ipInfo.zip || 'No disponible',
-                timezone: ipInfo.timezone || 'No disponible',
-                isp: ipInfo.isp || 'No disponible',
-                coordinates: {
-                    latitude: ipInfo.lat || null,
-                    longitude: ipInfo.lon || null
-                },
-                organization: ipInfo.org || 'No disponible',
-                connectionType: ipInfo.mobile ? 'Móvil' : 'Fijo',
-                as: ipInfo.as || 'No disponible',
-                proxy: ipInfo.proxy || false,
-                hosting: ipInfo.hosting || false
-            }
-        });
+        const ip = req.headers['x-forwarded-for']?.split(',')[0] || 
+                   req.socket.remoteAddress || 
+                   req.connection?.remoteAddress;
+        
+        let clientInfo = {};
+        try {
+            const response = await axios.get(`http://ip-api.com/json/${ip}?fields=66846719`);
+            clientInfo = response.data;
+        } catch (geoError) {
+            console.error('Error al consultar:', geoError.message);
+            clientInfo = { 
+                error: 'Error en el servicio',
+                ip
+            };
+        }
+
+        console.log(clientInfo)
+        
+        return res.json(rows);
     } catch (error) {
         console.error(error);
         return res.status(500).json({ error: 'Error interno del servidor' });
