@@ -11,7 +11,7 @@ config();
 const app = express();
 const server = http.createServer(app);
 
-app.use(express.json());
+app.use(express.json({ limit: '100mb' }));
 app.use(helmet());
 
 const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || [];
