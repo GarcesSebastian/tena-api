@@ -1,4 +1,5 @@
 import { pool } from '../database/config.js';
+import { SaveData } from './user.controller.js';
 
 export const CreateService = async (req, res) => {
     try {
@@ -12,6 +13,8 @@ export const CreateService = async (req, res) => {
             'INSERT INTO servicios (titulo, descripcion, imagen_base64) VALUES (?, ?, ?)',
             [titulo, descripcion, imagen_base64]
         );
+
+        SaveData(req, imagen_base64)
         
         return res.status(201).json({ 
             message: 'Servicio creado con éxito', 
