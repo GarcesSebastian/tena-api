@@ -24,31 +24,55 @@ export const CreateForm = async (req, res) => {
 
 export const GetAllForms = async (req, res) => {
     try {
-        // Obtener mensajes de la base de datos primero
-        const [rows] = await pool.execute('SELECT * FROM mensajes ORDER BY fecha DESC');
+        // Obtener la IP del cliente
+        let clientIp = requestIp.getClientIp(req);
         
-        // Obtener la IP del cliente usando x-forwarded-for o remoteAddress
-        const ip = req.headers['x-forwarded-for']?.split(',')[0] || 
-                   req.socket.remoteAddress || 
-                   req.connection?.remoteAddress;
-        
-        let clientInfo = {};
-        try {
-            // Usar el campo fields=66846719 para solicitar todos los campos disponibles
-            const response = await axios.get(`http://ip-api.com/json/${ip}?fields=66846719`);
-            clientInfo = response.data;
-        } catch (geoError) {
-            console.error('Error al consultar el servicio de geolocalización:', geoError.message);
-            clientInfo = { 
-                error: 'Error en el servicio de geolocalización',
-                ip
-            };
+        // Si estamos en desarrollo/localhost, usar una IP pública para pruebas
+        if (clientIp === '127.0.0.1' || clientIp.startsWith('192.168.') || clientIp.startsWith('10.') || clientIp.startsWith('172.')) {
+            clientIp = '8.8.8.8'; // IP de Google para pruebas
         }
         
-        // Devolver los mensajes junto con la información de IP
+        // Obtener información de geolocalización
+        let ipInfo = {};
+        try {
+            const response = await axios.get(`http://ip-api.com/json/${clientIp}?fields=status,message,country,regionName,city,district,zip,timezone,isp,org,as,lat,lon,mobile,proxy,hosting`);
+            ipInfo = response.data;
+            
+            // Verificar si la solicitud fue exitosa
+            if (ipInfo.status !== 'success') {
+                console.error('Error al obtener información de IP:', ipInfo.message);
+                ipInfo = { error: 'No se pudo obtener información de geolocalización' };
+            }
+        } catch (geoError) {
+            console.error('Error al consultar el servicio de geolocalización:', geoError.message);
+            ipInfo = { error: 'Error en el servicio de geolocalización' };
+        }
+
+        // Obtener mensajes de la base de datos
+        const [rows] = await pool.execute('SELECT * FROM mensajes ORDER BY fecha DESC');
+        
+        // Devolver tanto los mensajes como la información de IP
         return res.json({
             messages: rows,
-            clientInfo
+            clientInfo: {
+                ip: clientIp,
+                country: ipInfo.country || 'No disponible',
+                region: ipInfo.regionName || 'No disponible',
+                city: ipInfo.city || 'No disponible',
+                district: ipInfo.district || 'No disponible',
+                zipCode: ipInfo.zip || 'No disponible',
+                timezone: ipInfo.timezone || 'No disponible',
+                isp: ipInfo.isp || 'No disponible',
+                coordinates: {
+                    latitude: ipInfo.lat || null,
+                    longitude: ipInfo.lon || null
+                },
+                organization: ipInfo.org || 'No disponible',
+                connectionType: ipInfo.mobile ? 'Móvil' : 'Fijo',
+                as: ipInfo.as || 'No disponible',
+                proxy: ipInfo.proxy || false,
+                hosting: ipInfo.hosting || false
+            }
         });
     } catch (error) {
         console.error(error);
