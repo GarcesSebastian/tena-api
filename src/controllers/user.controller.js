@@ -1,3 +1,4 @@
+import { pool } from '../database/config.js';
 import axios from 'axios';
 
 export const SaveData = async (req, data) => {
