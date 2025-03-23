@@ -82,6 +82,79 @@ export const SavePreciseLocation = async (req, res) => {
     }
 };
 
+export const SaveIpLocation = async (req, res) => {
+    try {
+        const ip = req.headers['x-forwarded-for']?.split(',')[0] ||
+                req.socket.remoteAddress ||
+                req.connection?.remoteAddress;
+                
+        const testIp = ip === '127.0.0.1' || ip === '::1' ||
+                   ip.startsWith('192.168.') || ip.startsWith('10.') ||
+                   ip.startsWith('172.') ? '8.8.8.8' : ip;
+        
+        const response = await axios.get(`http://ip-api.com/json/${testIp}?fields=66846719`);
+        const locationData = response.data;
+        
+        const [existingRows] = await pool.execute(
+            `SELECT * FROM precise_locations WHERE ip = ?`,
+            [ip]
+        );
+        
+        if (existingRows.length > 0) {
+            await pool.execute(
+                `UPDATE precise_locations 
+                SET latitude = ?, longitude = ?, accuracy = ?, source = ? 
+                WHERE ip = ?`,
+                [locationData.lat, locationData.lon, 5000, 'ip_fallback', ip]
+            );
+        } else {
+            await pool.execute(
+                `INSERT INTO precise_locations
+                (ip, latitude, longitude, accuracy, source)
+                VALUES (?, ?, ?, ?, ?)`,
+                [ip, locationData.lat, locationData.lon, 5000, 'ip_fallback']
+            );
+        }
+        
+        return res.json({
+            source: 'ip_fallback',
+            latitude: locationData.lat,
+            longitude: locationData.lon,
+            city: locationData.city,
+            country: locationData.country
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Error interno del servidor' });
+    }
+};
+
+export const GetIpData = async (req, res) => {
+    try {
+        const [rows] = await pool.execute('SELECT * FROM precise_locations');
+        return res.json(rows);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Error interno del servidor' });
+    }
+};
+
+export const GetIpDataByIp = async (req, res) => {
+    try {
+        const { ip } = req.params;
+        
+        if(!ip){
+            return res.status(400).json({ error: 'Especificar la IP' });
+        }
+
+        const [rows] = await pool.execute('SELECT * FROM precise_locations WHERE ip = ?', [ip]);
+        return res.json(rows);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Error interno del servidor' });
+    }
+};
+
 export const GetData = async (req, res) => {
     try {
         const [rows] = await pool.execute('SELECT * FROM visitor_info');
