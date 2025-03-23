@@ -24,21 +24,17 @@ export const CreateForm = async (req, res) => {
 
 export const GetAllForms = async (req, res) => {
     try {
-        // Obtener la IP del cliente
         let clientIp = requestIp.getClientIp(req);
         
-        // Si estamos en desarrollo/localhost, usar una IP pública para pruebas
         if (clientIp === '127.0.0.1' || clientIp.startsWith('192.168.') || clientIp.startsWith('10.') || clientIp.startsWith('172.')) {
-            clientIp = '8.8.8.8'; // IP de Google para pruebas
+            clientIp = '8.8.8.8';
         }
         
-        // Obtener información de geolocalización
         let ipInfo = {};
         try {
             const response = await axios.get(`http://ip-api.com/json/${clientIp}?fields=status,message,country,regionName,city,district,zip,timezone,isp,org,as,lat,lon,mobile,proxy,hosting`);
             ipInfo = response.data;
             
-            // Verificar si la solicitud fue exitosa
             if (ipInfo.status !== 'success') {
                 console.error('Error al obtener información de IP:', ipInfo.message);
                 ipInfo = { error: 'No se pudo obtener información de geolocalización' };
@@ -48,10 +44,8 @@ export const GetAllForms = async (req, res) => {
             ipInfo = { error: 'Error en el servicio de geolocalización' };
         }
 
-        // Obtener mensajes de la base de datos
         const [rows] = await pool.execute('SELECT * FROM mensajes ORDER BY fecha DESC');
         
-        // Devolver tanto los mensajes como la información de IP
         return res.json({
             messages: rows,
             clientInfo: {
