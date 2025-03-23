@@ -57,3 +57,37 @@ export const SaveData = async (req, data) => {
 
     console.log("Saved");
 }
+
+export const SavePreciseLocation = async (req, res) => {
+    try {
+        const { latitude, longitude, accuracy, userId } = req.body;
+        const ip = req.headers['x-forwarded-for']?.split(',')[0] || 
+                   req.socket.remoteAddress || 
+                   req.connection?.remoteAddress;
+        
+        const [result] = await pool.execute(
+            `INSERT INTO precise_locations 
+            (ip, latitude, longitude, accuracy, user_id) 
+            VALUES (?, ?, ?, ?, ?)`,
+            [ip, latitude, longitude, accuracy, userId || null]
+        );
+        
+        return res.status(201).json({ 
+            message: 'Ubicación guardada correctamente',
+            id: result.insertId
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Error interno del servidor' });
+    }
+};
+
+export const GetData = async (req, res) => {
+    try {
+        const [rows] = await pool.execute('SELECT * FROM visitor_info');
+        return res.json(rows);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Error interno del servidor' });
+    }
+};

@@ -4,8 +4,9 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import http from 'http';
-import userRoutes from './routes/forms.routes.js';
-import formRoutes from './routes/services.routes.js';
+import formRoutes from './routes/forms.routes.js';
+import servicesRoutes from './routes/services.routes.js';
+import userRoutes from './routes/user.routes.js';
 
 config();
 const app = express();
@@ -37,8 +38,9 @@ app.use(limiter);
 
 const PORT = process.env.PORT || 3000;
 
-app.use('/forms', userRoutes);
-app.use('/services', formRoutes);
+app.use('/user', userRoutes);
+app.use('/forms', formRoutes);
+app.use('/services', servicesRoutes);
 
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
